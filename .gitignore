@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3桁数字当てゲーム</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(to bottom right, #581c87, #1e3a8a, #312e81);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .container {
+      background: white;
+      border-radius: 1rem;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      padding: 2rem;
+      max-width: 64rem;
+      width: 100%;
+    }
+
+    h1 {
+      font-size: 2.25rem;
+      font-weight: bold;
+      text-align: center;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(to right, #9333ea, #2563eb);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #4b5563;
+      margin-bottom: 1.5rem;
+    }
+
+    .setup-container, .playing-container, .finished-container {
+      display: none;
+    }
+
+    .setup-container.active, .playing-container.active, .finished-container.active {
+      display: block;
+    }
+
+    .setup-box {
+      background: linear-gradient(to right, #eff6ff, #faf5ff);
+      padding: 1.5rem;
+      border-radius: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .setup-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: #1f2937;
+    }
+
+    .setup-description {
+      color: #374151;
+      margin-bottom: 1rem;
+    }
+
+    .number-display {
+      background: white;
+      border: 4px solid #c084fc;
+      border-radius: 0.75rem;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+
+    .number-label {
+      font-size: 0.875rem;
+      color: #4b5563;
+      margin-bottom: 0.5rem;
+    }
+
+    .number-value {
+      font-family: monospace;
+      font-size: 3rem;
+      font-weight: bold;
+      color: #9333ea;
+      letter-spacing: 0.5rem;
+      min-height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .number-pad {
+      margin-top: 1rem;
+    }
+
+    .number-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .number-btn {
+      aspect-ratio: 1;
+      background: white;
+      border: 2px solid #d8b4fe;
+      border-radius: 0.5rem;
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #7e22ce;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .number-btn:hover {
+      background: #faf5ff;
+      border-color: #a855f7;
+    }
+
+    .number-btn:active {
+      transform: scale(0.95);
+    }
+
+    .delete-btn {
+      width: 100%;
+      padding: 0.75rem;
+      background: #fee2e2;
+      border: 2px solid #fca5a5;
+      border-radius: 0.5rem;
+      font-weight: 600;
+      color: #b91c1c;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .delete-btn:hover {
+      background: #fecaca;
+    }
+
+    .start-btn, .guess-btn, .reset-btn {
+      width: 100%;
+      padding: 1rem;
+      background: linear-gradient(to right, #9333ea, #2563eb);
+      color: white;
+      border: none;
+      border-radius: 0.5rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 1rem;
+    }
+
+    .start-btn:hover, .guess-btn:hover, .reset-btn:hover {
+      background: linear-gradient(to right, #7e22ce, #1d4ed8);
+    }
+
+    .start-btn:disabled, .guess-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .turn-display {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .turn-number {
+      font-size: 1.875rem;
+      font-weight: bold;
+      color: #9333ea;
+    }
+
+    .history-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .history-box {
+      padding: 1.5rem;
+      border-radius: 0.75rem;
+      border: 2px solid;
+    }
+
+    .history-box.player {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+    }
+
+    .history-box.ai {
+      background: #faf5ff;
+      border-color: #e9d5ff;
+    }
+
+    .history-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+
+    .history-header.player {
+      color: #1e3a8a;
+    }
+
+    .history-header.ai {
+      color: #581c87;
+    }
+
+    .history-item {
+      background: white;
+      padding: 0.75rem;
+      border-radius: 0.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+    }
+
+    .history-guess {
+      font-family: monospace;
+      font-size: 1.25rem;
+      font-weight: bold;
+    }
+
+    .history-result {
+      font-size: 0.875rem;
+    }
+
+    .hit {
+      color: #dc2626;
+      font-weight: 600;
+    }
+
+    .blow {
+      color: #ca8a04;
+      font-weight: 600;
+    }
+
+    .result-box {
+      padding: 2rem;
+      border-radius: 0.75rem;
+      text-align: center;
+      border: 4px solid;
+      margin-bottom: 1.5rem;
+    }
+
+    .result-box.winner {
+      background: linear-gradient(to right, #fffbeb, #fff7ed);
+      border-color: #fbbf24;
+      animation: pulse 2s infinite;
+    }
+
+    .result-box.loser {
+      background: linear-gradient(to right, #f9fafb, #f1f5f9);
+      border-color: #9ca3af;
+    }
+
+    .result-box.draw {
+      background: linear-gradient(to right, #eff6ff, #faf5ff);
+      border-color: #93c5fd;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.8; }
+    }
+
+    .result-emoji {
+      font-size: 3.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .result-title {
+      font-size: 2.25rem;
+      font-weight: bold;
+      margin-bottom: 1rem;
+    }
+
+    .result-message {
+      font-size: 1.25rem;
+      color: #374151;
+      margin-bottom: 1rem;
+    }
+
+    .rules-box {
+      margin-top: 1.5rem;
+      padding: 1rem;
+      background: #f9fafb;
+      border-radius: 0.5rem;
+    }
+
+    .rules-title {
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: #374151;
+    }
+
+    .rules-list {
+      font-size: 0.875rem;
+      color: #4b5563;
+      list-style: none;
+      padding-left: 0;
+    }
+
+    .rules-list li {
+      margin-bottom: 0.25rem;
+    }
+
+    @media (max-width: 768px) {
+      .history-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      h1 {
+        font-size: 1.5rem;
+      }
+      
+      .number-value {
+        font-size: 2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>3桁数字当てゲーム</h1>
+    <p class="subtitle">AI vs プレイヤー - 10ターン勝負</p>
+
+    <!-- Setup Screen -->
+    <div class="setup-container active" id="setupScreen">
+      <div class="setup-box">
+        <h2 class="setup-title">ゲームの準備</h2>
+        <p class="setup-description">AIに当ててもらう3桁の数字を設定してください（0～9の数字を使用）</p>
+        
+        <div class="number-display">
+          <div class="number-label">あなたの数字</div>
+          <div class="number-value" id="playerTargetDisplay">___</div>
+        </div>
+        
+        <div class="number-pad">
+          <div class="number-grid" id="setupNumberPad"></div>
+          <button class="delete-btn" onclick="deleteDigit(true)">
+            <span>🗑️</span> 削除
+          </button>
+        </div>
+
+        <button class="start-btn" id="startBtn" onclick="startGame()">ゲームスタート</button>
+      </div>
+    </div>
+
+    <!-- Playing Screen -->
+    <div class="playing-container" id="playingScreen">
+      <div class="turn-display">
+        <div class="turn-number" id="turnDisplay">ターン 1/10</div>
+      </div>
+
+      <div class="history-grid">
+        <div class="history-box player">
+          <div class="history-header player">
+            <span>👤</span>
+            <h3>あなたの推測</h3>
+          </div>
+          <div id="playerHistory"></div>
+        </div>
+
+        <div class="history-box ai">
+          <div class="history-header ai">
+            <span>🧠</span>
+            <h3>AIの推測</h3>
+          </div>
+          <div id="aiHistory"></div>
+        </div>
+      </div>
+
+      <div class="setup-box">
+        <h3 class="setup-title">AIの数字を当てよう！</h3>
+        
+        <div class="number-display">
+          <div class="number-label">あなたの推測</div>
+          <div class="number-value" id="playerGuessDisplay">___</div>
+        </div>
+
+        <div class="number-pad">
+          <div class="number-grid" id="playNumberPad"></div>
+          <button class="delete-btn" onclick="deleteDigit(false)">
+            <span>🗑️</span> 削除
+          </button>
+        </div>
+
+        <button class="guess-btn" id="guessBtn" onclick="makeGuess()">この数字で推測</button>
+      </div>
+    </div>
+
+    <!-- Finished Screen -->
+    <div class="finished-container" id="finishedScreen">
+      <div class="result-box" id="resultBox"></div>
+      <button class="reset-btn" onclick="resetGame()">
+        <span>🔄</span> もう一度プレイ
+      </button>
+    </div>
+
+    <div class="rules-box">
+      <h4 class="rules-title">ルール説明</h4>
+      <ul class="rules-list">
+        <li>• 0～9の数字を使って3桁の数字を作成</li>
+        <li>• <strong>Hit</strong>: 数字と位置が両方正解</li>
+        <li>• <strong>Blow</strong>: 数字は正解だが位置が違う</li>
+        <li>• 10ターン以内に相手の数字を当てたら勝利！</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    let playerTarget = '';
+    let aiTarget = '';
+    let playerGuess = '';
+    let gameState = 'setup';
+    let turn = 1;
+    let playerHistory = [];
+    let aiHistory = [];
+    let winner = null;
+    let aiPossibleNumbers = [];
+
+    function init() {
+      renderNumberPad('setupNumberPad');
+      renderNumberPad('playNumberPad');
+      resetGame();
+    }
+
+    function renderNumberPad(elementId) {
+      const pad = document.getElementById(elementId);
+      const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0];
+      pad.innerHTML = '';
+      
+      numbers.forEach(num => {
+        const btn = document.createElement('button');
+        btn.className = 'number-btn';
+        btn.textContent = num;
+        btn.onclick = () => addDigit(num.toString(), elementId === 'setupNumberPad');
+        pad.appendChild(btn);
+      });
+    }
+
+    function generateRandomNumber() {
+      const digits = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+      for (let i = digits.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [digits[i], digits[j]] = [digits[j], digits[i]];
+      }
+      return digits.slice(0, 3).join('');
+    }
+
+    function checkGuess(target, guess) {
+      let hit = 0;
+      let blow = 0;
+      
+      for (let i = 0; i < 3; i++) {
+        if (target[i] === guess[i]) {
+          hit++;
+        } else if (target.includes(guess[i])) {
+          blow++;
+        }
+      }
+      
+      return { hit, blow };
+    }
+
+    function filterPossibleNumbers(numbers, guess, result) {
+      return numbers.filter(num => {
+        const testResult = checkGuess(num, guess);
+        return testResult.hit === result.hit && testResult.blow === result.blow;
+      });
+    }
+
+    function aiMakeGuess() {
+      if (aiPossibleNumbers.length === 0) return generateRandomNumber();
+      
+      const randomIndex = Math.floor(Math.random() * aiPossibleNumbers.length);
+      return aiPossibleNumbers[randomIndex];
+    }
+
+    function addDigit(digit, isSetup) {
+      if (isSetup) {
+        if (playerTarget.length < 3) {
+          playerTarget += digit;
+          updateDisplay();
+        }
+      } else {
+        if (playerGuess.length < 3) {
+          playerGuess += digit;
+          updateDisplay();
+        }
+      }
+    }
+
+    function deleteDigit(isSetup) {
+      if (isSetup) {
+        playerTarget = playerTarget.slice(0, -1);
+      } else {
+        playerGuess = playerGuess.slice(0, -1);
+      }
+      updateDisplay();
+    }
+
+    function updateDisplay() {
+      if (gameState === 'setup') {
+        document.getElementById('playerTargetDisplay').textContent = playerTarget || '___';
+        document.getElementById('startBtn').disabled = playerTarget.length !== 3;
+      } else if (gameState === 'playing') {
+        document.getElementById('playerGuessDisplay').textContent = playerGuess || '___';
+        document.getElementById('guessBtn').disabled = playerGuess.length !== 3;
+      }
+    }
+
+    function startGame() {
+      if (playerTarget.length !== 3) {
+        alert('3桁の数字を入力してください');
+        return;
+      }
+
+      aiTarget = generateRandomNumber();
+      
+      const possible = [];
+      for (let i = 0; i <= 999; i++) {
+        possible.push(i.toString().padStart(3, '0'));
+      }
+      aiPossibleNumbers = possible;
+
+      gameState = 'playing';
+      showScreen('playingScreen');
+      updateDisplay();
+    }
+
+    function makeGuess() {
+      if (playerGuess.length !== 3) {
+        alert('3桁の数字を入力してください');
+        return;
+      }
+
+      const playerResult = checkGuess(aiTarget, playerGuess);
+      playerHistory.push({ guess: playerGuess, ...playerResult });
+      renderHistory('playerHistory', playerHistory);
+
+      if (playerResult.hit === 3) {
+        winner = 'player';
+        endGame();
+        return;
+      }
+
+      const aiGuess = aiMakeGuess();
+      const aiResult = checkGuess(playerTarget, aiGuess);
+      aiHistory.push({ guess: aiGuess, ...aiResult });
+      renderHistory('aiHistory', aiHistory);
+
+      aiPossibleNumbers = filterPossibleNumbers(aiPossibleNumbers, aiGuess, aiResult);
+
+      if (aiResult.hit === 3) {
+        winner = 'ai';
+        endGame();
+        return;
+      }
+
+      if (turn >= 10) {
+        winner = 'draw';
+        endGame();
+        return;
+      }
+
+      turn++;
+      playerGuess = '';
+      document.getElementById('turnDisplay').textContent = `ターン ${turn}/10`;
+      updateDisplay();
+    }
+
+    function renderHistory(elementId, history) {
+      const container = document.getElementById(elementId);
+      container.innerHTML = '';
+      
+      history.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'history-item';
+        div.innerHTML = `
+          <span class="history-guess">${item.guess}</span>
+          <span class="history-result">
+            <span class="hit">Hit: ${item.hit}</span> | 
+            <span class="blow">Blow: ${item.blow}</span>
+          </span>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function endGame() {
+      gameState = 'finished';
+      showScreen('finishedScreen');
+      
+      const resultBox = document.getElementById('resultBox');
+      
+      if (winner === 'player') {
+        resultBox.className = 'result-box winner';
+        resultBox.innerHTML = `
+          <div class="result-emoji">🎊🎉🏆🎉🎊</div>
+          <h2 class="result-title" style="background: linear-gradient(to right, #ca8a04, #ea580c); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+            素晴らしい！完璧な勝利です！
+          </h2>
+          <p class="result-message">あなたは天才です！AIを完全に打ち負かしました！</p>
+          <p style="color: #4b5563; margin-bottom: 0.5rem;">この論理的思考力、まさに圧巻です！</p>
+          <div style="margin-top: 1.5rem;">
+            <p>あなたの数字: <span style="font-family: monospace; font-weight: bold; color: #2563eb;">${playerTarget}</span></p>
+            <p>AIの数字: <span style="font-family: monospace; font-weight: bold; color: #9333ea;">${aiTarget}</span></p>
+          </div>
+          <p style="font-size: 1.5rem; font-weight: bold; color: #ca8a04; margin-top: 1rem;">🌟 PERFECT VICTORY 🌟</p>
+        `;
+      } else if (winner === 'ai') {
+        resultBox.className = 'result-box loser';
+        resultBox.innerHTML = `
+          <div class="result-emoji">😏🤖💻</div>
+          <h2 class="result-title" style="color: #1f2937;">
+            あれれ〜？AIに負けちゃいましたね〜
+          </h2>
+          <p class="result-message">まさかAIに勝てると思ってました？😏</p>
+          <p style="color: #4b5563; margin-bottom: 0.5rem;">もうちょっと頭使った方がいいんじゃないですか？</p>
+          <p style="color: #4b5563; margin-bottom: 0.5rem;">AIの方が圧倒的に賢かったようですね〜😎</p>
+          <div style="margin-top: 1.5rem;">
+            <p>あなたの数字: <span style="font-family: monospace; font-weight: bold; color: #2563eb;">${playerTarget}</span></p>
+            <p>AIの数字: <span style="font-family: monospace; font-weight: bold; color: #9333ea;">${aiTarget}</span></p>
+          </div>
+          <p style="font-size: 1.5rem; font-weight: bold; color: #dc2626; margin-top: 1rem;">🤡 GAME OVER 🤡</p>
+          <p style="font-size: 0.875rem; color: #6b7280; margin-top: 0.5rem;">次は頑張ってくださいね〜（笑）</p>
+        `;
+      } else {
+        resultBox.className = 'result-box draw';
+        resultBox.innerHTML = `
+          <div class="result-emoji">🤝✨</div>
+          <h2 class="result-title" style="color: #1f2937;">
+            引き分け！
+          </h2>
+          <p class="result-message">なかなかやりますね！</p>
+          <p style="color: #4b5563; margin-bottom: 0.5rem;">AIと互角に戦えるとは...悪くない実力です👍</p>
+          <div style="margin-top: 1.5rem;">
+            <p>あなたの数字: <span style="font-family: monospace; font-weight: bold; color: #2563eb;">${playerTarget}</span></p>
+            <p>AIの数字: <span style="font-family: monospace; font-weight: bold; color: #9333ea;">${aiTarget}</span></p>
+          </div>
+          <p style="font-size: 1.25rem; font-weight: bold; color: #2563eb; margin-top: 1rem;">次は勝利を目指しましょう！</p>
+        `;
+      }
+    }
+
+    function resetGame() {
+      playerTarget = '';
+      aiTarget = '';
+      playerGuess = '';
+      gameState = 'setup';
+      turn = 1;
+      playerHistory = [];
+      aiHistory = [];
+      winner = null;
+      aiPossibleNumbers = [];
+      
+      showScreen('setupScreen');
+      updateDisplay();
+      document.getElementById('playerHistory').innerHTML = '';
+      document.getElementById('aiHistory').innerHTML = '';
+      document.getElementById('turnDisplay').textContent = 'ターン 1/10';
+    }
+
+    function showScreen(screenId) {
+      document.getElementById('setupScreen').classList.remove('active');
+      document.getElementById('playingScreen').classList.remove('active');
+      document.getElementById('finishedScreen').classList.remove('active');
+      document.getElementById(screenId).classList.add('active');
+    }
+
+    init();
+  </script>
+</body>
+</html>
